@@ -1,13 +1,12 @@
 package com.bento.forumHub.controllers;
 
-import com.bento.forumHub.domain.entities.TopicEntity;
+import com.bento.forumHub.domain.dtos.TopicDto;
 import com.bento.forumHub.services.TopicService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/topics")
@@ -17,24 +16,27 @@ public class TopicController {
     private TopicService topicService;
 
     @GetMapping
-    public List<TopicEntity> getAllTopics() {
-        return topicService.getAllTopics();
+    public Page<TopicDto> getAllTopics(Pageable pageable) {
+        // Adiciona paginação usando o Pageable
+        return topicService.getAllTopics(pageable);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TopicEntity> getTopic(@PathVariable Long id) {
-        Optional<TopicEntity> topic = topicService.getTopic(id);
-        return topic.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<TopicDto> getTopic(@PathVariable Long id) {
+        return topicService.getTopic(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public TopicEntity createTopic(@RequestBody TopicEntity topic) {
-        return topicService.createTopic(topic);
+    public ResponseEntity<TopicDto> createTopic(@RequestBody TopicDto topicDto) {
+        TopicDto createdTopic = topicService.createTopic(topicDto);
+        return ResponseEntity.ok(createdTopic);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TopicEntity> updateTopic(@PathVariable Long id, @RequestBody TopicEntity topicDetails) {
-        TopicEntity updatedTopic = topicService.updateTopic(id, topicDetails);
+    public ResponseEntity<TopicDto> updateTopic(@PathVariable Long id, @RequestBody TopicDto topicDto) {
+        TopicDto updatedTopic = topicService.updateTopic(id, topicDto);
         return ResponseEntity.ok(updatedTopic);
     }
 
@@ -44,4 +46,3 @@ public class TopicController {
         return ResponseEntity.noContent().build();
     }
 }
-
