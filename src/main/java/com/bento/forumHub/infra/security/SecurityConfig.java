@@ -2,18 +2,19 @@ package com.bento.forumHub.infra.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationManagerResolver;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
@@ -24,7 +25,6 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
-            // Aqui você pode buscar o usuário no banco de dados
             if ("user".equals(username)) {
                 return User.withUsername("user")
                         .password(passwordEncoder().encode("password"))
@@ -36,18 +36,30 @@ public class SecurityConfig {
         };
     }
 
-    // Definir o AuthenticationManager para ser injetado em outros lugares
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-
-    // Configuração do HttpSecurity para definir permissões de acesso
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeRequests()
-                .requestMatchers("/auth/**").permitAll()  // Permite acesso sem autenticação
-                .anyRequest().authenticated() // Exige autenticação para qualquer outra requisição
-                .and();
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**",
+                                "/swagger-ui/index.html",
+                                "/default-ui.css",
+                                "/favicon.ico"
+                        ).permitAll()  // Permite acesso ao Swagger sem autenticação
+                        .anyRequest().authenticated()  // Exige autenticação para outras requisições
+                )
+                .formLogin(form -> form.permitAll())  // Permite login com formulário padrão
+                .csrf(csrf -> csrf.disable());  // Desabilita CSRF para simplificar testes
+
+        return http.build();
     }
+
 }

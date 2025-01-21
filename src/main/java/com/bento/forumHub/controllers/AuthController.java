@@ -1,5 +1,6 @@
 package com.bento.forumHub.controllers;
 
+import com.bento.forumHub.domain.request.LoginRequest;
 import com.bento.forumHub.services.JwtTokenService;
 import com.bento.forumHub.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,15 +25,20 @@ public class AuthController {
     private UserDetailsServiceImpl userDetailsService;
 
     @PostMapping("/login")
-    public String login(@RequestParam String username, @RequestParam String password) {
+    public String login(@RequestBody LoginRequest loginRequest) {
         try {
+            // Realiza a autenticação
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(username, password)
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
             );
+
+            // Recupera os detalhes do usuário autenticado
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            return jwtTokenService.generateToken(userDetails.getUsername());
+
+            // Gera e retorna o token JWT
+            return jwtTokenService.gerarToken(userDetails.getUsername());
         } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("Invalid credentials", e); // Captura a exceção de credenciais inválidas
+            throw new BadCredentialsException("Invalid credentials", e);
         }
     }
 }
